@@ -1,0 +1,39 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-fazztrack
+spec:
+  selector:
+    app: backend-fazztrack
+  type: LoadBalancer
+  ports:
+  - port: 3000
+    targetPort: 3000
+    protocol: TCP
+    nodePort: 30000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-fazztrack
+spec:
+  selector:
+    matchLabels:
+      app: backend-fazztrack
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: backend-fazztrack
+    spec:
+      containers:
+      - name: backend-fazztrack
+        image: zayyanabdillah/backend-fazztrack
+        # command: ["/bin/sh","-c"]
+        # args: ["npx sequelize-cli db:migrate"]
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "500m"
+        ports:
+        - containerPort: 3000

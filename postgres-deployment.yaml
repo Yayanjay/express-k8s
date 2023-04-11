@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: PersistentVolume
+metadata:
+  name: postgres-pv-volume
+  labels:
+    type: local
+    app: postgres
+spec:
+  storageClassName: manual
+  capacity:
+    storage: 5Gi
+  accessModes:
+    - ReadWriteMany
+  hostPath:
+    path: "/mnt/data"
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-pv-claim
+  labels:
+    app: postgres
+spec:
+  storageClassName: manual
+  accessModes:
+    - ReadWriteMany
+  resources:
+    requests:
+      storage: 5Gi
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-fazztrack
+  labels:
+    app: postgres-fazztrack
+spec:
+  type: ClusterIP
+  ports:
+   - port: 5432
+  selector:
+   app: postgres-fazztrack
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres-fazztrack
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-fazztrack
+  template:
+    metadata:
+      labels:
+        app: postgres-fazztrack
+    spec:
+      containers:
+        - name: postgres-fazztrack
+          image: postgres:latest
+          imagePullPolicy: "IfNotPresent"
+          ports:
+            - containerPort: 5432
+          envFrom:
+            - configMapRef:
+                name: postgres-config
+          volumeMounts:
+            - name: fazztrack
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: fazztrack
+          persistentVolumeClaim:
+            claimName: postgres-pv-claim
